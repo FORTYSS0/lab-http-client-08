@@ -8,16 +8,17 @@ option(BUILD_DOCS "Build documentation" OFF)
 option(BUILD_COVERAGE "Build code coverage" OFF)
 
 set(
-  HUNTER_CACHE_SERVERS
-  "https://github.com/bmstu-iu8-cpp-sem-3/hunter-cache"
-  CACHE STRING "Default cache server"
+        HUNTER_CACHE_SERVERS
+        "https://github.com/bmstu-iu8-cpp-sem-3/hunter-cache"
+        CACHE STRING "Default cache server"
 )
 
 include("cmake/HunterGate.cmake")
 
 HunterGate(
-  URL "https://github.com/cpp-pm/hunter/archive/v0.23.278.tar.gz"
-  SHA1 "35fa55bc1dfcf9f4d7264f8bb26cd1759ce1ae07"
+        URL "https://github.com/cpp-pm/hunter/archive/v0.23.278.tar.gz"
+        SHA1 "35fa55bc1dfcf9f4d7264f8bb26cd1759ce1ae07"
+        #  LOCAL
 )
 
 # TODO: rename project and delete this comment
@@ -29,27 +30,45 @@ string(APPEND CMAKE_CXX_FLAGS " -Wshadow -Wnon-virtual-dtor")
 hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
 
+hunter_add_package(Beast)
+find_package(Beast CONFIG REQUIRED)
+
+hunter_add_package(asio)
+find_package(asio CONFIG REQUIRED version 1.18.1)
+
+hunter_add_package(Boost COMPONENTS thread system filesystem)
+find_package(Boost COMPONENTS thread system filesystem)
+
+hunter_add_package(nlohmann_json)
+find_package(nlohmann_json CONFIG REQUIRED)
+
 add_library(${PROJECT_NAME} STATIC
-  # enum your files and delete this comment
-  ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
-)
+        # enum your files and delete this comment
+        ${CMAKE_CURRENT_SOURCE_DIR}/sources/client.cpp
+        )
 
 add_executable(demo
-  ${CMAKE_CURRENT_SOURCE_DIR}/demo/main.cpp
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/sources/client.cpp
+        )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include>"
-)
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>"
+        "$<INSTALL_INTERFACE:include>"
+        )
 
 target_link_libraries(demo ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} nlohmann_json::nlohmann_json)
+target_link_libraries(${PROJECT_NAME} ${Boost_THREAD_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${Boost_SYSTEM_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries(${PROJECT_NAME} Beast::Beast)
+target_link_libraries(${PROJECT_NAME} asio::asio_static)
 
 if(BUILD_TESTS)
   add_executable(tests
-    # TODO: enum your files and delete this comment
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.cpp
-  )
+          ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.cpp
+          )
   target_link_libraries(tests ${PROJECT_NAME} GTest::gtest_main)
   enable_testing()
   add_test(NAME unit_tests COMMAND tests)
@@ -79,16 +98,16 @@ endif()
 include(CPackConfig.cmake)
 
 install(TARGETS ${PROJECT_NAME} demo
-  EXPORT "${PROJECT_NAME}-targets"
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  INCLUDES DESTINATION include
-)
+        EXPORT "${PROJECT_NAME}-targets"
+        RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        INCLUDES DESTINATION include
+        )
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include)
 
 install(EXPORT "${PROJECT_NAME}-targets"
-  NAMESPACE "${PROJECT_NAME}::"
-  DESTINATION "lib/cmake"
-)
+        NAMESPACE "${PROJECT_NAME}::"
+        DESTINATION "lib/cmake"
+        )
